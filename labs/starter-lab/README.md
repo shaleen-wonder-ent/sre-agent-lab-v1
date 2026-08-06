@@ -58,7 +58,8 @@ Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the
 
 ### Optional
 
-- [GitHub account](https://github.com) — fork [dm-chelupati/grubify](https://github.com/dm-chelupati/grubify/fork) for Scenarios 2 & 3
+- [GitHub account](https://github.com) — fork [dm-chelupati/grubify](https://github.com/dm-chelupati/grubify/fork) and enable **Settings → Features → Issues** for Scenarios 2 & 3
+- Alert email notifications — set `ALERT_EMAIL_ADDRESS` in the azd environment before deployment
 
 ## Quick Start
 
@@ -101,6 +102,7 @@ az provider register -n Microsoft.App --wait
 azd env new sre-lab
 azd env set AZURE_LOCATION eastus2
 # Optional: azd env set GITHUB_USER <your-username>
+# Optional: azd env set ALERT_EMAIL_ADDRESS <your-email-address>
 azd up
 
 bash scripts/post-provision.sh
@@ -208,6 +210,22 @@ Then later ask: `Who is on call today?`
 ```bash
 azd down --purge
 ```
+
+This removes the resource group but keeps the checked-in lab definition and your local azd environment. To recreate the complete lab later, run the one-command setup again:
+
+```bash
+bash scripts/setup.sh
+```
+
+On Windows:
+
+```cmd
+"C:\Program Files\Git\bin\bash.exe" scripts/setup.sh
+```
+
+Expect roughly 10-15 minutes for Azure provisioning, cloud image builds, and agent configuration. The core lab requires only Azure sign-in. GitHub scenarios also require selecting your fork and completing GitHub OAuth; no resources or agent definitions need to be recreated manually.
+
+If you keep the resource group, you can rerun `bash scripts/post-provision.sh --retry` to repair or refresh the agent configuration without reprovisioning Azure resources.
 
 ## Troubleshooting
 

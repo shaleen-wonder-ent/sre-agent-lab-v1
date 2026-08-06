@@ -332,8 +332,13 @@ echo ""
 
 # ── Step 2: Create incident-handler subagent ─────────────────────────────────
 echo "🤖 Step 2/5: Creating/updating incident-handler subagent..."
-echo "   Using full config with GitHub tools"
-create_subagent "sre-config/agents/incident-handler-full.yaml" "incident-handler"
+if [ -n "$GITHUB_REPO" ]; then
+  echo "   Using full config with GitHub tools"
+  create_subagent "sre-config/agents/incident-handler-full.yaml" "incident-handler"
+else
+  echo "   Using core config without GitHub tools"
+  create_subagent "sre-config/agents/incident-handler-core.yaml" "incident-handler"
+fi
 echo ""
 
 # ── Step 3: Enable Azure Monitor + create response plan ──────────────────────
@@ -369,7 +374,7 @@ for attempt in 1 2 3 4 5; do
     -X PUT "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/grubify-http-errors" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Content-Type: application/json" \
-    --data-binary '{"id":"grubify-http-errors","name":"Grubify HTTP Errors","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"incident-handler","agentMode":"autonomous","maxAttempts":3}')
+    --data-binary '{"id":"grubify-http-errors","name":"Grubify HTTP Errors","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"incident-handler","agentMode":"autonomous"}')
 
   if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ] || [ "$HTTP_CODE" = "409" ]; then
     echo "   ✅ Response plan → incident-handler"

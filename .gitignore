@@ -9,3 +9,7 @@
 Thumbs.db
 Desktop.ini
 samples/deployment-compliance/skills/.DS_Store
+
+# Local Azure Developer CLI and editor state
+.azure/
+.vscode/

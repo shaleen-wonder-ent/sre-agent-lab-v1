@@ -11,6 +11,9 @@ param location string = 'eastus2'
 @secure()
 param githubPat string = ''
 
+@description('Email address for Azure Monitor alert notifications')
+param alertEmailAddress string = ''
+
 // Resource group
 var resourceGroupName = 'rg-${environmentName}'
 
@@ -26,6 +29,7 @@ module resources 'resources.bicep' = {
   params: {
     environmentName: environmentName
     location: location
+    alertEmailAddress: alertEmailAddress
   }
 }
 

@@ -20,6 +20,9 @@ param appInsightsConnectionString string
 @description('Application Insights resource ID')
 param appInsightsId string
 
+@description('Log Analytics workspace resource ID')
+param logAnalyticsId string
+
 @description('Resource Group ID to add as managed resource')
 param managedResourceGroupId string
 
@@ -53,6 +56,10 @@ resource sreAgent 'Microsoft.App/agents@2025-05-01-preview' = {
       identity: identityId
       accessLevel: 'Low'
     }
+    incidentManagementConfiguration: {
+      type: 'AzMonitor'
+      connectionName: 'azmonitor'
+    }
     mcpServers: []
     logConfiguration: {
       applicationInsightsConfiguration: {
@@ -71,6 +78,67 @@ resource sreAgentAdminRoleAssignment 'Microsoft.Authorization/roleAssignments@20
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', sreAgentAdminRoleId)
     principalId: deployer().objectId
     principalType: 'User'
+  }
+}
+
+var connectorRoles = [
+  'acdd72a7-3385-48ef-bd42-f606fba81ae7' // Reader
+  '43d0d8ad-25c7-4714-9337-8ba259a9fe05' // Monitoring Reader
+  '73c42c96-874c-492b-b04d-ab87d138a893' // Log Analytics Reader
+]
+
+resource connectorRoleAssignments 'Microsoft.Authorization/roleAssignments@2022-04-01' = [for roleId in connectorRoles: {
+  name: guid(resourceGroup().id, sreAgent.id, roleId)
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleId)
+    principalId: sreAgent.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}]
+
+#disable-next-line BCP081
+resource appInsightsConnector 'Microsoft.App/agents/connectors@2025-05-01-preview' = {
+  parent: sreAgent
+  name: 'app-insights'
+  properties: {
+    dataConnectorType: 'AppInsights'
+    dataSource: appInsightsId
+    extendedProperties: {
+      armResourceId: appInsightsId
+      appId: appInsightsAppId
+      resource: {
+        name: last(split(appInsightsId, '/'))
+      }
+    }
+    identity: 'system'
+  }
+}
+
+#disable-next-line BCP081
+resource logAnalyticsConnector 'Microsoft.App/agents/connectors@2025-05-01-preview' = {
+  parent: sreAgent
+  name: 'log-analytics'
+  properties: {
+    dataConnectorType: 'LogAnalytics'
+    dataSource: logAnalyticsId
+    extendedProperties: {
+      armResourceId: logAnalyticsId
+      resource: {
+        name: last(split(logAnalyticsId, '/'))
+      }
+    }
+    identity: 'system'
+  }
+}
+
+#disable-next-line BCP081
+resource azureMonitorConnector 'Microsoft.App/agents/connectors@2025-05-01-preview' = {
+  parent: sreAgent
+  name: 'azure-monitor'
+  properties: {
+    dataConnectorType: 'MonitorClient'
+    dataSource: 'n/a'
+    identity: 'system'
   }
 }
 

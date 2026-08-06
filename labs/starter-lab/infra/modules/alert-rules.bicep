@@ -4,6 +4,9 @@ param containerAppId string
 @description('Environment name for naming')
 param environmentName string
 
+@description('Email address for Azure Monitor alert notifications')
+param alertEmailAddress string = ''
+
 // ============================================================
 // Action Group (minimal - SRE Agent picks up alerts via managed resources)
 // ============================================================
@@ -13,6 +16,13 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   properties: {
     groupShortName: 'SRELabAG'
     enabled: true
+    emailReceivers: empty(alertEmailAddress) ? [] : [
+      {
+        name: 'SRELabEmail'
+        emailAddress: alertEmailAddress
+        useCommonAlertSchema: true
+      }
+    ]
   }
 }
 

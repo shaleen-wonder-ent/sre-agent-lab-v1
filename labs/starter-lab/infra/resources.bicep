@@ -4,6 +4,9 @@ param environmentName string
 @description('Location for all resources')
 param location string
 
+@description('Email address for Azure Monitor alert notifications')
+param alertEmailAddress string = ''
+
 // ============================================================
 // Variables
 // ============================================================
@@ -65,6 +68,7 @@ module sreAgent 'modules/sre-agent.bicep' = {
     appInsightsAppId: monitoring.outputs.appInsightsAppId
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     appInsightsId: monitoring.outputs.appInsightsId
+    logAnalyticsId: monitoring.outputs.logAnalyticsWorkspaceId
     managedResourceGroupId: resourceGroup().id
   }
 }
@@ -77,6 +81,7 @@ module alertRules 'modules/alert-rules.bicep' = {
   params: {
     containerAppId: containerApp.outputs.containerAppId
     environmentName: environmentName
+    alertEmailAddress: alertEmailAddress
   }
 }
 
