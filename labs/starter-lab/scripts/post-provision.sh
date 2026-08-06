@@ -6,6 +6,7 @@
 #   - Uploads knowledge base files
 #   - Creates subagents via dataplane v2 API
 #   - Creates incident response plan
+#   - Creates a daily public exposure audit
 #   - GitHub OAuth connector + subagents
 # =============================================================================
 set -uo pipefail
@@ -339,6 +340,7 @@ else
   echo "   Using core config without GitHub tools"
   create_subagent "sre-config/agents/incident-handler-core.yaml" "incident-handler"
 fi
+create_subagent "sre-config/agents/public-exposure-auditor.yaml" "public-exposure-auditor"
 echo ""
 
 # ── Step 3: Enable Azure Monitor + create response plan ──────────────────────
@@ -395,6 +397,40 @@ done
 TOKEN=$(get_token)
 curl -s -o /dev/null -X DELETE "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/quickstart_response_plan" \
   -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || true
+
+# Create a read-only public exposure audit every day at 06:00 UTC
+echo "   Creating scheduled task for public exposure audit..."
+TOKEN=$(get_token)
+EXISTING_TASKS=$(curl -s "${AGENT_ENDPOINT}/api/v1/scheduledtasks" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || echo "[]")
+echo "$EXISTING_TASKS" | $PYTHON -c "
+import sys,json
+try:
+    tasks=json.load(sys.stdin)
+    for t in tasks:
+        if t.get('name')=='audit-public-exposure':
+            print(t.get('id',''))
+except: pass
+" 2>/dev/null | while read -r task_id; do
+    if [ -n "$task_id" ]; then
+      curl -s -o /dev/null -X DELETE "${AGENT_ENDPOINT}/api/v1/scheduledtasks/${task_id}" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null
+    fi
+  done
+
+PUBLIC_EXPOSURE_TASK_BODY=$($PYTHON -c "
+import json
+body = {'name':'audit-public-exposure','description':'Audit the authorized Azure scope for accidental public network exposure every day','cronExpression':'0 6 * * *','agentPrompt':'Audit the authorized Azure scope for accidental or overly broad public network exposure. Inspect NSGs, public IP attachments, public PaaS access, AKS external exposure, and relevant Activity Log changes from the last 24 hours. Report evidence, severity, affected scope, change attribution when available, and Review-mode remediation recommendations. Do not modify resources.','agent':'public-exposure-auditor'}
+print(json.dumps(body))
+")
+HTTP_CODE=$(echo "$PUBLIC_EXPOSURE_TASK_BODY" | curl -s -o /dev/null -w "%{http_code}" \
+  -X POST "${AGENT_ENDPOINT}/api/v1/scheduledtasks" \
+  -H "Authorization: Bearer ${TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @-)
+if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || [ "$HTTP_CODE" = "202" ]; then
+  echo "   ✅ Scheduled task: audit-public-exposure (daily at 06:00 UTC → public-exposure-auditor)"
+else
+  echo "   ⚠️  Public exposure scheduled task returned HTTP ${HTTP_CODE}"
+fi
 
 echo ""
 
@@ -667,7 +703,7 @@ echo "  👉 Go to https://sre.azure.com and explore:"
 echo "     1. Knowledge sources (see uploaded runbooks + code repo)"
 echo "     2. Builder → Custom agents (see subagents + tools)"
 echo "     3. Builder → Connectors (see GitHub OAuth)"
-echo "     4. Builder → Scheduled tasks (see triage-grubify-issues)"
+echo "     4. Builder → Scheduled tasks (see audit-public-exposure)"
 echo "     5. Settings → Incident platform (Azure Monitor)"
 echo ""
 echo "  Then run: ./scripts/break-app.sh"

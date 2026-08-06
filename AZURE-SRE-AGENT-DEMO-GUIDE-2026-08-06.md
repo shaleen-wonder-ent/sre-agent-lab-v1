@@ -265,13 +265,83 @@ Before enabling autonomous remediation, confirm:
 
 ---
 
-## 8. Pricing
+## 8. Security posture scenario: accidentally exposed public ports
+
+Azure SRE Agent can investigate public exposure when it has Reader access and a
+focused prompt, custom agent, or scheduled task. It should complement Azure's
+native prevention and posture controls, not replace them.
+
+| Layer | Azure service | Responsibility |
+|---|---|---|
+| Prevent | Azure Policy at a management group or subscription | Deny prohibited public IPs, broad NSG rules, or public network access before deployment |
+| Continuously assess | Azure Policy Audit and Defender for Cloud/Defender CSPM | Inventory noncompliance, recommendations, attack paths, and exposure risk |
+| Detect changes | Azure Activity Log, Azure Monitor, or Event Grid | Trigger on NSG, firewall, public IP, ingress, or public-access changes |
+| Investigate | Azure SRE Agent | Correlate effective reachability, resource context, owner, recent caller, and operational impact |
+| Remediate | SRE Agent in Review mode or an approved automation workflow | Propose the least-disruptive fix, require approval, apply it with narrow RBAC, and verify the result |
+
+Do not classify every public endpoint as a vulnerability. Evaluate the effective
+path, source range, protocol and port, attached resource, environment, firewall or
+WAF controls, and business intent. Public HTTP/HTTPS can be expected; management
+ports, database ports, unrestricted Kubernetes APIs, and custom high ports usually
+deserve stronger scrutiny.
+
+### Starter-lab implementation
+
+The starter lab includes a **public-exposure-auditor** custom agent with only
+`RunAzCliReadCommands` and `GetAzCliHelp`. Its **audit-public-exposure** scheduled
+task runs daily at 06:00 UTC and reports:
+
+- Broad NSG inbound sources such as `Internet`, `*`, `0.0.0.0/0`, and `::/0`
+- Public IP attachments and the resources they expose
+- Public PaaS network access and unrestricted firewall or IP allowlists
+- AKS services, ingress, load balancers, and public control-plane exposure
+- Relevant Activity Log changes from the previous 24 hours, including caller attribution when available
+- Severity, evidence, affected scope, and a least-disruptive remediation recommendation
+
+The task is deliberately non-destructive. Run it from **Builder > Scheduled
+tasks > audit-public-exposure > Run task now**, or select the custom agent and ask:
+
+`Audit my authorized Azure scope for accidental public exposure. Show effective reachability, sensitive ports, recent change attribution, and prioritized remediation recommendations. Do not modify resources.`
+
+### AWS SCP equivalent and zero-data-retention intent
+
+An AWS Organizations SCP that blocks enabling model data retention maps to a
+combination of Azure controls rather than one direct Azure-wide switch:
+
+| AWS concept | Azure equivalent |
+|---|---|
+| Organization and organizational units | Azure tenant and management-group hierarchy |
+| SCP permission guardrail | Azure Policy initiative assigned at management-group scope, combined with Azure RBAC |
+| Governed exception | Time-bound, approved Azure Policy exemption at the narrowest scope |
+| Service-specific retention setting | The relevant Foundry/model deployment, logging, tracing, storage, and feature configuration |
+
+Azure Policy controls resource configuration and deployment; Azure RBAC controls
+who can change it. Azure deny assignments are primarily system-managed and are not
+the general customer-authored replacement for SCPs.
+
+For Microsoft Foundry model inference, prompts and completions are not used to
+train the base models. Standard abuse monitoring can retain content for automated
+and, when flagged, human review. Customers approved for modified abuse monitoring
+can disable that prompt/completion storage and human review; verify the deployment
+shows `ContentLogging=false`. This control does not erase data intentionally stored
+by stateful features such as agents, threads, files, vector stores, evaluations,
+traces, application logs, or customer storage.
+
+Therefore, define "zero retention" by service and data type. A defensible control
+set inventories every stateful feature, disables content logging where approved,
+applies Policy and RBAC guardrails, configures retention or deletion on customer
+stores and observability systems, and continuously audits drift. Do not claim a
+single tenant-level Azure setting guarantees zero retention across all AI services.
+
+---
+
+## 9. Pricing
 
 > **Pricing snapshot checked August 6, 2026. Always verify the Azure pricing page and your agreement before making a purchasing decision.**
 
 Azure SRE Agent is billed in **Azure Agent Units (AAUs)**. Public US list pricing is currently **$0.10 per AAU** and has two components.
 
-### 8.1 Always-on flow: fixed baseline
+### 9.1 Always-on flow: fixed baseline
 
 - Rate: **4 AAUs per agent-hour**
 - Public US list cost: `4 AAUs x $0.10 = $0.40 per agent-hour`
@@ -280,7 +350,7 @@ Azure SRE Agent is billed in **Azure Agent Units (AAUs)**. Public US list pricin
 
 Always-on billing starts when the agent is created and continues until it is deleted. Stopping the agent does not remove this charge.
 
-### 8.2 Active flow: variable, token-based usage
+### 9.2 Active flow: variable, token-based usage
 
 Active flow is charged whenever the agent is processing work, including chat, incidents, scheduled tasks, triggers, and asynchronous investigations. Waiting for human input is not active-flow usage.
 
@@ -302,7 +372,7 @@ Illustrative documented scenarios at public US list pricing:
 
 These are examples, not fixed task prices. Actual use depends on context size, task complexity, reasoning steps, tool results, caching, and the configured provider.
 
-### 8.3 Example monthly estimate
+### 9.3 Example monthly estimate
 
 For one agent in a 30-day month using GPT 5.3 Codex for 20 example incident investigations and 100 example quick questions:
 
@@ -329,7 +399,7 @@ There is currently no SRE Agent free tier. Azure offers and agreement discounts 
 
 ---
 
-## 9. Suggested live demo flow
+## 10. Suggested live demo flow
 
 ### Demo objective
 
@@ -370,7 +440,7 @@ Show the agent moving from a symptom to evidence, root cause, controlled mitigat
 
 ---
 
-## 10. Questions the audience is likely to ask
+## 11. Questions the audience is likely to ask
 
 ### Does the agent replace the on-call engineer?
 
@@ -402,11 +472,11 @@ It stops active processing and active-flow consumption, but the fixed always-on 
 
 ### Is customer data used to train the models?
 
-Microsoft's current FAQ states that customer data is not used to train AI models. Review the current data privacy, model-provider, and organizational compliance documentation for your deployment.
+Microsoft states that prompts and completions are not used to train the base models. That is separate from abuse-monitoring retention and from stateful features intentionally storing data. Review the model provider, abuse-monitoring status, application logging, agent storage, and organizational compliance requirements for each deployment.
 
 ---
 
-## 11. Recommended pilot
+## 12. Recommended pilot
 
 Run a two-to-four-week pilot around one well-observed service:
 
@@ -431,6 +501,11 @@ A successful pilot proves not merely that the agent can answer questions, but th
 - [Create and set up an agent](https://learn.microsoft.com/azure/sre-agent/create-and-set-up)
 - [Manage permissions](https://learn.microsoft.com/azure/sre-agent/manage-permissions)
 - [Security overview](https://learn.microsoft.com/azure/sre-agent/security-overview)
+- [Azure Policy overview](https://learn.microsoft.com/azure/governance/policy/overview)
+- [Organize resources with management groups](https://learn.microsoft.com/azure/governance/management-groups/overview)
+- [Defender for Cloud environment settings](https://learn.microsoft.com/azure/defender-for-cloud/environment-settings)
+- [Data, privacy, and security for Azure Direct Models](https://learn.microsoft.com/azure/ai-foundry/responsible-ai/openai/data-privacy)
+- [Apply for modified abuse monitoring](https://learn.microsoft.com/azure/ai-foundry/responsible-ai/openai/limited-access)
 - [Connectors](https://learn.microsoft.com/azure/sre-agent/connectors)
 - [Custom agents](https://learn.microsoft.com/azure/sre-agent/sub-agents)
 - [Incident response plans](https://learn.microsoft.com/azure/sre-agent/incident-response-plans)

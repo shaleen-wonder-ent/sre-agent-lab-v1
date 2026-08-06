@@ -27,9 +27,10 @@ Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the
 | **incident-handler** | Investigates using logs, KQL, runbooks |
 | **code-analyzer** | Same + source code search, creates GitHub issues |
 | **issue-triager** | Triages customer issues with labels and comments |
+| **public-exposure-auditor** | Read-only audit of accidental public network exposure |
 | **Response Plan** | Routes alerts to custom agents autonomously |
 | **GitHub OAuth** | Code search + issue management (optional) |
-| **Scheduled Task** | Triage issues every 12 hours (optional) |
+| **Scheduled Tasks** | Daily public exposure audit; issue triage every 12 hours (optional) |
 | **Global Tools** | DevOps + Python plotting enabled |
 
 ## Lab Scenarios
@@ -39,6 +40,7 @@ Deploy an Azure SRE Agent, break a sample app, and watch it diagnose and fix the
 | 1 | **Break app → Agent investigates logs + remediates** | IT Operations | No |
 | 2 | **Same break → Agent finds root cause in source code + creates GitHub issue** | Developer + IT | Yes |
 | 3 | **Triage customer issues → classify, label, comment** | Workflow Automation | Yes |
+| 4 | **Audit accidental public exposure → evidence + remediation plan** | Security + Platform | No |
 
 ## Prerequisites
 
@@ -166,6 +168,31 @@ bash scripts/create-sample-issues.sh <your-user>/grubify
    - Classification: Bug, Performance, Feature Request, Question
    - Labels: `bug`, `api-bug`, `severity-high`, etc.
    - Triage comment from the agent
+
+## Scenario 4: Public Exposure Audit (No GitHub)
+
+The setup creates a read-only **public-exposure-auditor** and schedules
+**audit-public-exposure** daily at 06:00 UTC.
+
+1. Go to **Builder → Scheduled tasks** → **audit-public-exposure** → **Run task now**.
+2. Review the findings for broad NSG rules, attached public IPs, public PaaS access,
+   AKS exposure, and related Activity Log changes.
+3. Confirm each finding includes evidence, severity, affected scope, change attribution
+   when available, and a least-disruptive remediation recommendation.
+4. Verify that the task reports only and does not change Azure resources.
+
+For an interactive run, select **public-exposure-auditor** in a new chat and ask:
+
+```
+Audit my authorized Azure scope for accidental public exposure. Show effective
+reachability, sensitive ports, recent change attribution, and prioritized
+remediation recommendations. Do not modify resources.
+```
+
+This workflow complements Azure Policy and Defender for Cloud. Use Azure Policy
+to audit or deny prohibited configurations, Defender for Cloud for continuous
+posture and attack-path analysis, and SRE Agent for contextual investigation and
+guarded remediation. SRE Agent is not the enforcement boundary.
 
 ## Bonus Scenarios
 
