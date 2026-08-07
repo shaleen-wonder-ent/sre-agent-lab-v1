@@ -4,8 +4,8 @@
   "metadata": {
     "_generator": {
       "name": "bicep",
-      "version": "0.43.1.21952",
-      "templateHash": "17454459993975253304"
+      "version": "0.42.1.51946",
+      "templateHash": "1805727680011651425"
     }
   },
   "parameters": {
@@ -82,8 +82,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "7676869149456753884"
+              "version": "0.42.1.51946",
+              "templateHash": "8948410599729513884"
             }
           },
           "parameters": {
@@ -252,7 +252,7 @@
                   {
                     "name": "agent-subnet",
                     "properties": {
-                      "addressPrefix": "10.30.0.0/28",
+                      "addressPrefix": "10.30.0.0/27",
                       "routeTable": {
                         "id": "[resourceId('Microsoft.Network/routeTables', format('rt-agent-{0}', parameters('uniqueSuffix')))]"
                       },
@@ -401,7 +401,7 @@
                           "TCP"
                         ],
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "destinationAddresses": [
                           "168.63.129.16"
@@ -428,7 +428,7 @@
                           "TCP"
                         ],
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "destinationAddresses": [
                           "10.20.0.0/20"
@@ -455,7 +455,7 @@
                           "TCP"
                         ],
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "destinationAddresses": [
                           "10.10.2.0/27"
@@ -482,7 +482,7 @@
                           "TCP"
                         ],
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "destinationAddresses": "[if(parameters('lockAgentToPrivateMonitor'), createArray('AzureResourceManager', 'AzureActiveDirectory'), createArray('AzureResourceManager', 'AzureActiveDirectory', 'AzureMonitor'))]",
                         "destinationPorts": [
@@ -504,7 +504,7 @@
                         "name": "allow-arm-aad-graph",
                         "description": "FQDN access to ARM, Entra ID, and Microsoft Graph",
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "protocols": [
                           {
@@ -533,7 +533,7 @@
                         "name": "allow-learn-microsoft-com",
                         "description": "Microsoft Learn docs + MCP runtime endpoint (the agent looks up Azure/AKS/PostgreSQL guidance here)",
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "protocols": [
                           {
@@ -551,7 +551,7 @@
                         "name": "allow-github-raw-mcp-bits",
                         "description": "GitHub raw content — the Microsoft Learn MCP connector fetches its server bits here to complete the tool-discovery handshake",
                         "sourceAddresses": [
-                          "10.30.0.0/28"
+                          "10.30.0.0/27"
                         ],
                         "protocols": [
                           {
@@ -716,8 +716,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "16542703906130965193"
+              "version": "0.42.1.51946",
+              "templateHash": "17480536039515911558"
             }
           },
           "parameters": {
@@ -801,8 +801,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "4090068017172206758"
+              "version": "0.42.1.51946",
+              "templateHash": "720836159890845158"
             }
           },
           "parameters": {
@@ -1153,8 +1153,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "10431586641767226171"
+              "version": "0.42.1.51946",
+              "templateHash": "16600624925514353524"
             }
           },
           "parameters": {
@@ -1362,8 +1362,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "17292056227793990345"
+              "version": "0.42.1.51946",
+              "templateHash": "1641231188956360063"
             }
           },
           "parameters": {
@@ -1535,8 +1535,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "3222822890112493357"
+              "version": "0.42.1.51946",
+              "templateHash": "14290555692999582225"
             }
           },
           "parameters": {
@@ -1732,8 +1732,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "5106647395530293630"
+              "version": "0.42.1.51946",
+              "templateHash": "17723394568846186128"
             }
           },
           "parameters": {
@@ -2398,8 +2398,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "7201943993443478661"
+              "version": "0.42.1.51946",
+              "templateHash": "17682626619172123953"
             }
           },
           "parameters": {
@@ -2701,8 +2701,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "274583280134423126"
+              "version": "0.42.1.51946",
+              "templateHash": "16198709998746038686"
             }
           },
           "parameters": {
@@ -2778,8 +2778,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "1813198627844114663"
+              "version": "0.42.1.51946",
+              "templateHash": "14756717451055550202"
             }
           },
           "parameters": {
@@ -2861,8 +2861,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "1813198627844114663"
+              "version": "0.42.1.51946",
+              "templateHash": "14756717451055550202"
             }
           },
           "parameters": {
@@ -2945,8 +2945,8 @@
           "metadata": {
             "_generator": {
               "name": "bicep",
-              "version": "0.43.1.21952",
-              "templateHash": "1813198627844114663"
+              "version": "0.42.1.51946",
+              "templateHash": "14756717451055550202"
             }
           },
           "parameters": {

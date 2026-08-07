@@ -1,0 +1,37 @@
+# ============================================================
+# Global Hook: Port Remediation Approval
+# Requires explicit user approval before the agent changes any NSG rule to
+# block, narrow, or open a port. Reporting and read-only analysis are allowed
+# without approval.
+# Activation: always (fires on every matching event)
+# ============================================================
+
+name: port-remediation-approval
+event_type: Stop
+activation_mode: always
+description: >
+  Requires explicit user approval before the agent creates, updates, or deletes
+  any network security group rule. This guarantees no port is blocked, opened,
+  or narrowed without human consent.
+
+hook:
+  type: prompt
+  prompt: |
+    You are a safety reviewer for network security changes. Inspect the agent's
+    proposed response for any of these actions:
+
+    1. Creating an NSG rule — `az network nsg rule create`
+    2. Updating an NSG rule — `az network nsg rule update`
+    3. Deleting an NSG rule — `az network nsg rule delete`
+    4. Modifying an NSG directly — `az network nsg update`
+    5. Any change to a `Microsoft.Network/networkSecurityGroups` resource or its
+       `securityRules`
+
+    If the agent is about to perform ANY of these actions:
+    - REJECT and clearly explain what the agent wants to do.
+    - Name the NSG, the rule, the port, and the source range affected.
+    - State the effect (e.g. "blocks SSH from the internet on vm-app-01").
+    - Ask the user to reply "yes" to approve or "no" to cancel.
+
+    If the agent is only reading data, querying the Activity Log, or generating a
+    report WITHOUT modifying any NSG, APPROVE the response.

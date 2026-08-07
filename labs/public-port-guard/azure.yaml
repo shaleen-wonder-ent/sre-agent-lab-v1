@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: public-port-guard
+metadata:
+  template: public-port-guard@1.0.0
+
+# Infrastructure provisioned via Bicep (infra/main.bicep)
+# azd provision creates: Resource Group, two Linux VMs (shared subnet NSG),
+# Log Analytics Workspace, an Activity Log alert on NSG rule changes, an
+# SRE Agent (Microsoft.App/agents), and role assignments.
+#
+# Post-provision (run manually after azd provision completes):
+#   bash scripts/post-deploy.sh
+# configures — via the SRE Agent DATA-PLANE API — the public-port-guard skill,
+# the port-remediation approval hook, the public-port-scan scheduled task, and
+# the Azure Monitor response plan.

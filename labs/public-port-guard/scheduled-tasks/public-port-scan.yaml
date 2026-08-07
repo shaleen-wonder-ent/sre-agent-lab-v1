@@ -1,0 +1,28 @@
+# ============================================================
+# Scheduled Task: Public Port Scan
+# Runs every 30 minutes to proactively detect VMs exposing sensitive ports
+# to the public internet. Reports only — remediation stays approval-gated.
+# ============================================================
+
+name: public-port-scan
+schedule: "*/30 * * * *"
+description: >
+  Proactive scan of all Virtual Machines in the managed resource group for
+  sensitive ports exposed to the public internet via NSG inbound rules.
+
+message: |
+  Use the public-port-guard skill to scan every VM in this resource group for
+  sensitive ports exposed to the public internet.
+
+  For each VM:
+  1. Resolve the NSG that applies (NIC NSG and subnet NSG).
+  2. Find inbound Allow rules whose source is Internet / * / 0.0.0.0/0 and whose
+     destination is a sensitive port (22, 3389, 3306, 5432, 1433, 6379, 27017,
+     9200, 5601, 5984, 2375, 2376, 11211) or a wildcard/range.
+  3. Confirm the VM has a public IP and is running (real reachability).
+  4. Attribute the change via the Activity Log (who opened it, when).
+
+  Produce a findings table ranked Critical / High / Medium / Informational.
+  Do NOT remediate automatically — report findings and the recommended block
+  for each one. Public 80/443 on a web-frontend VM is expected; report it as
+  Informational. If nothing is publicly exposed, say so and list the checks run.
