@@ -87,35 +87,65 @@ az provider register -n Microsoft.App --wait
 
 ## Deploy
 
+### Fast path — Windows (recommended)
+
+One command from ground zero: creates the azd environment, generates a VM
+password, provisions, and fully configures the agent (skill, connectors, hook,
+response plan, scheduled task).
+
+```powershell
+cd labs/public-port-guard
+az login
+azd auth login
+pwsh -File scripts/setup.ps1 -EnvName port-guard-demo -Location eastus2
+```
+
+Prefer to run the steps yourself? Provision, then configure:
+
+```powershell
+azd env new port-guard-demo
+azd env set VM_ADMIN_PASSWORD '<Strong!Passw0rd>'   # key value — do NOT pipe
+azd env set AZURE_LOCATION eastus2
+azd provision
+pwsh -File scripts/configure-agent.ps1
+```
+
+> **Why PowerShell on Windows?** Git Bash `curl` cannot reach the
+> `*.azuresre.ai` data-plane endpoint on Windows (returns HTTP 000).
+> `configure-agent.ps1` uses `Invoke-RestMethod` and also installs the extended
+> skill, the Log Analytics + Azure Monitor connectors, the approval hook, and
+> the scheduled task — everything the agent needs.
+
+### macOS / Linux
+
 ```bash
 cd labs/public-port-guard
-
-# 1. Create an azd environment
 azd env new port-guard-demo
-
-# 2. Set a VM admin password (>=12 chars, meets Azure complexity rules)
 azd env set VM_ADMIN_PASSWORD '<Strong!Passw0rd>'
-
-# 3. (optional) pick a region — default is eastus2
 azd env set AZURE_LOCATION eastus2
-
-# 4. Provision the infrastructure
 azd provision
-
-# 5. Configure the agent (skill, response plan, incident platform, role)
 bash scripts/post-deploy.sh
-#   Windows: "C:\Program Files\Git\bin\bash.exe" scripts/post-deploy.sh
-```
-
-### Apply the hook and scheduled task
-
-The approval hook and the scan task are provided as YAML. Apply them either in
-the portal (**sre.azure.com → your agent → Builder**) or with `srectl`:
-
-```bash
-srectl hook apply       -f hooks/port-remediation-approval.yaml
+# then apply the hook + scheduled task:
+srectl hook apply          -f hooks/port-remediation-approval.yaml
 srectl scheduledtask apply -f scheduled-tasks/public-port-scan.yaml
 ```
+
+### What the agent ends up with
+
+| Asset | Source |
+|-------|--------|
+| `public-port-guard` **knowledge** file (indexed) | `skills/public-port-guard.md` |
+| `public-port-guard` **extended skill** (tools + detail) | `skills/public-port-guard/SKILL.md` |
+| `log-analytics` + `azure-monitor` **connectors** | `configure-agent.ps1` |
+| `Public Port Exposure` **response plan** (autonomous) | data plane |
+| `port-remediation-approval` **hook** | `hooks/port-remediation-approval.yaml` |
+| `public-port-scan` **scheduled task** (every 30 min) | `scheduled-tasks/public-port-scan.yaml` |
+| Incident platform = **Azure Monitor** | data plane |
+
+> **Knowledge vs skill:** the knowledge file is searchable reference
+> (`SearchMemory`); the extended skill auto-activates by description and carries
+> the scoped tools. This lab installs both.
+
 
 ---
 
@@ -210,7 +240,9 @@ public-port-guard/
 ├── scheduled-tasks/
 │   └── public-port-scan.yaml
 └── scripts/
-    ├── post-deploy.sh                # data-plane agent configuration
+    ├── setup.ps1                     # one-command ground-zero setup (Windows)
+    ├── configure-agent.ps1           # full data-plane config (Windows/any, reliable)
+    ├── post-deploy.sh                # data-plane config (macOS/Linux)
     └── break-ports.sh                # opens/resets public ports
 ```
 

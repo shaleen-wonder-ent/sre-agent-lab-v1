@@ -1,19 +1,26 @@
 #!/bin/bash
 # ============================================================
-# Post-deployment setup for the Public Port Guard lab.
-# Run after `azd provision` completes. Configures — via the SRE Agent
-# DATA-PLANE API (not ARM child resources, which are restricted to internal
-# tenants) — the following:
+# Post-deployment setup for the Public Port Guard lab (macOS / Linux).
+#
+# >>> ON WINDOWS, USE scripts/configure-agent.ps1 INSTEAD. <<<
+# Git Bash curl cannot reach the *.azuresre.ai data-plane endpoint on Windows
+# (returns HTTP 000). The PowerShell configurator is the reliable, complete path
+# and ALSO installs the extended skill, the Log Analytics + Azure Monitor
+# connectors, the approval hook, and the scheduled task.
+#
+# This bash script configures — via the SRE Agent DATA-PLANE API (not ARM child
+# resources, which are restricted to internal tenants) — the following:
 #   1. SRE Agent Administrator role for the current user
-#   2. Activity Log diagnostic settings → Log Analytics
+#   2. Activity Log diagnostic settings → Log Analytics (best effort)
 #   3. Azure Monitor as the incident platform
-#   4. public-port-guard skill (uploaded as an indexed knowledge file)
+#   4. public-port-guard knowledge file (indexed)
 #   5. Azure Monitor response plan (routes NSG-change incidents to the agent)
 #   6. Verification readout
 #
-# The port-remediation-approval hook and public-port-scan scheduled task are
-# provided as YAML under hooks/ and scheduled-tasks/. Apply them from the
-# portal (Builder) or with srectl — see the README.
+# For the FULL configuration on any OS (connectors, extended skill, hook, task),
+# prefer:  pwsh -File scripts/configure-agent.ps1
+# The port-remediation-approval hook and public-port-scan scheduled task YAML
+# under hooks/ and scheduled-tasks/ can also be applied with srectl.
 # ============================================================
 
 set -uo pipefail
@@ -138,7 +145,7 @@ for attempt in 1 2 3 4 5; do
     -X PUT "${AGENT_ENDPOINT}/api/v1/incidentPlayground/filters/public-port-exposure" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Content-Type: application/json" \
-    -d '{"id":"public-port-exposure","name":"Public Port Exposure","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"","agentMode":"autonomous","maxAttempts":3}')
+    -d '{"id":"public-port-exposure","name":"Public Port Exposure","priorities":["Sev0","Sev1","Sev2","Sev3","Sev4"],"titleContains":"","handlingAgent":"","agentMode":"autonomous"}')
   if [[ "$HTTP_CODE" == "200" || "$HTTP_CODE" == "201" || "$HTTP_CODE" == "202" || "$HTTP_CODE" == "409" ]]; then
     echo -e "${GREEN}  ✓ Response plan: public-port-exposure${NC}"
     FILTER_CREATED=true
